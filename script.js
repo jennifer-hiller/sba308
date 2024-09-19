@@ -84,7 +84,7 @@ function getLearnerData(course, ag, submissions) {
     }
     return assignment;
   }
-  const result = [];
+  const learnerData = [];
   try {
     if (course.id !== ag.course_id) {
       throw "Invalid course information";
@@ -92,39 +92,49 @@ function getLearnerData(course, ag, submissions) {
     submissions.forEach((submission) => {
       const assignment = findAssignmentById(submission.assignment_id);
       let score = submission.submission.score;
+      if (typeof score !== "number") {
+        throw "Invalid score";
+      }
       // deduct points for late submission
       if (submission.submission.submitted_at > assignment.due_at) {
         score *= 0.9;
       }
-      // find student by id
-      let student = result.find((item) => item.id === submission.learner_id);
-      if (!student) {
-        student = {
+      // find learner by id
+      let learner = learnerData.find(
+        (item) => item.id === submission.learner_id
+      );
+      // if not found, create new learner
+      if (!learner) {
+        learner = {
           id: submission.learner_id,
         };
-        result.push(student);
+        learnerData.push(learner);
       }
       // do not log if assignment is not due yet
       if (assignment.due_at > new Date().toISOString()) {
         return;
       }
-      student[submission.assignment_id] = score / assignment.points_possible;
+      if (assignment.points_possible === 0) {
+        learner[submission.assignment_id] = 0;
+        return;
+      }
+      learner[submission.assignment_id] = score / assignment.points_possible;
     });
-    result.forEach((student) => {
+    learnerData.forEach((learner) => {
       let total = 0;
       let numberOfAssignments = 0;
-      Object.keys(student).forEach((key) => {
+      Object.keys(learner).forEach((key) => {
         if (key !== "id") {
           numberOfAssignments++;
-          total += student[key];
+          total += learner[key];
         }
       });
-      student.avg = total / numberOfAssignments;
+      learner.avg = total / numberOfAssignments;
     });
   } catch (e) {
     console.error(e);
   }
-  return result;
+  return learnerData;
 }
 
 const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
