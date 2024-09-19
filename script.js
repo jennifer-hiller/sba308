@@ -1,8 +1,4 @@
 // The provided course information.
-const CourseInfo2 = {
-  id: 452,
-  name: "Introduction to Python",
-};
 const CourseInfo = {
   id: 451,
   name: "Introduction to JavaScript",
@@ -82,7 +78,7 @@ const LearnerSubmissions = [
 
 function getLearnerData(course, ag, submissions) {
   function findAssignmentById(id) {
-    const assignment = ag.assignments.find((assignment) => assignment.id == id);
+    const assignment = ag.assignments.find((assignment) => assignment.id == id); // == because it's a string compared with number
     if (!assignment) {
       throw "Invalid assignment ID";
     }
@@ -95,9 +91,10 @@ function getLearnerData(course, ag, submissions) {
     }
     submissions.forEach((submission) => {
       const assignment = findAssignmentById(submission.assignment_id);
+      let score = submission.submission.score;
       // deduct points for late submission
       if (submission.submission.submitted_at > assignment.due_at) {
-        submission.submission.score *= 0.9;
+        score *= 0.9;
       }
       // find student by id
       let student = result.find((item) => item.id === submission.learner_id);
@@ -107,22 +104,17 @@ function getLearnerData(course, ag, submissions) {
         };
         result.push(student);
       }
-      student[submission.assignment_id] =
-        submission.submission.score / assignment.points_possible;
+      // do not log if assignment is not due yet
+      if (assignment.due_at > new Date().toISOString()) {
+        return;
+      }
+      student[submission.assignment_id] = score / assignment.points_possible;
     });
     result.forEach((student) => {
       let total = 0;
       let numberOfAssignments = 0;
       Object.keys(student).forEach((key) => {
         if (key !== "id") {
-          const assignment = findAssignmentById(key);
-          // if the assignment is not due, do not log
-          if (assignment.due_at > new Date().toISOString()) {
-            return;
-            // if assignment is late, deduct 10%
-          } else if (assignment.due_at < new Date().toISOString()) {
-            student[key] *= 0.9;
-          }
           numberOfAssignments++;
           total += student[key];
         }
@@ -132,22 +124,6 @@ function getLearnerData(course, ag, submissions) {
   } catch (e) {
     console.error(e);
   }
-
-  // const result = [
-  //   {
-  //     id: 125,
-  //     avg: 0.985, // (47 + 150) / (50 + 150)
-  //     1: 0.94, // 47 / 50
-  //     2: 1.0, // 150 / 150
-  //   },
-  //   {
-  //     id: 132,
-  //     avg: 0.82, // (39 + 125) / (50 + 150)
-  //     1: 0.78, // 39 / 50
-  //     2: 0.833, // late: (140 - 15) / 150
-  //   },
-  // ];
-
   return result;
 }
 
