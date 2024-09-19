@@ -114,6 +114,7 @@ function getLearnerData(course, ag, submissions) {
       if (assignment.due_at > new Date().toISOString()) {
         return;
       }
+      // handle when possible points is 0, therefore handling division by 0
       if (assignment.points_possible === 0) {
         learner[submission.assignment_id] = 0;
         return;
